@@ -18,7 +18,7 @@ export function forceWorkspaceCommits({ workspace }: { workspace: string }) {
   return [`[vercel deploy ${workspace}]`, `[vercel build ${workspace}]`];
 }
 
-export const onlyWorkspaceRegex = /\[vercel only .+\]/;
+export const onlyWorkspaceRegex = /\[vercel only [^\]]+\]/;
 
 export function onlyWorkspaceCommits({ workspace }: { workspace: string }) {
   return [`[vercel only ${workspace}]`];

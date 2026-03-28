@@ -119,6 +119,17 @@ describe("checkCommit()", () => {
           reason: "Found commit message: [vercel only test-workspace]"
         });
       });
+
+      it("results in deploy when deploy only is followed by other tags", () => {
+        process.env.VERCEL = "1";
+        process.env.VERCEL_GIT_COMMIT_MESSAGE =
+          "deploying [vercel only test-workspace] [skip ci]";
+        expect(checkCommit({ workspace: "test-workspace" })).toEqual({
+          result: "deploy",
+          scope: "workspace",
+          reason: "Found commit message: [vercel only test-workspace]"
+        });
+      });
     });
   });
   describe("Not on Vercel", () => {
@@ -274,6 +285,38 @@ describe("checkCommit()", () => {
           result: "skip",
           scope: "workspace",
           reason: "Found commit message: [vercel only test-workspace]"
+        });
+        expect(mockExecSync).toHaveBeenCalledWith("git show -s --format=%B");
+        mockExecSync.mockRestore();
+      });
+
+      it("results in deploy when deploy only is followed by other tags", () => {
+        const commitBody = "deploying [vercel only test-workspace] [skip ci]";
+        const mockExecSync = jest
+          .spyOn(child_process, "execSync")
+          .mockImplementation((_) => commitBody);
+
+        expect(checkCommit({ workspace: "test-workspace" })).toEqual({
+          result: "deploy",
+          scope: "workspace",
+          reason: "Found commit message: [vercel only test-workspace]"
+        });
+        expect(mockExecSync).toHaveBeenCalledWith("git show -s --format=%B");
+        mockExecSync.mockRestore();
+      });
+
+      it("uses git show when on Vercel but message is missing", () => {
+        process.env.VERCEL = "1";
+        delete process.env.VERCEL_GIT_COMMIT_MESSAGE;
+        const commitBody = "fixing a test";
+        const mockExecSync = jest
+          .spyOn(child_process, "execSync")
+          .mockImplementation((_) => commitBody);
+
+        expect(checkCommit({ workspace: "test-workspace" })).toEqual({
+          result: "continue",
+          scope: "global",
+          reason: "No deploy or skip string found in commit message."
         });
         expect(mockExecSync).toHaveBeenCalledWith("git show -s --format=%B");
         mockExecSync.mockRestore();
